@@ -18,7 +18,7 @@ class DefaultController extends Controller
     {
         if ($request->getMethod() == 'POST') {
             $htmlContent = $request->request->get('html_content');
-            $pdfContent = $this->get('knp_snappy.pdf')->getOutputFromHtml(utf8_encode($htmlContent));
+            $pdfContent = $this->get('knp_snappy.pdf')->getOutputFromHtml(utf8_decode($htmlContent));
             return new JsonResponse(array('pdf_content' => utf8_encode($pdfContent)));
         }else{
             return $this->render('default/htmltopdf.html.twig');
