@@ -154,7 +154,7 @@ class DefaultController extends Controller
 
     protected function replaceHttps($html, $baseurl)
     {
-        if(preg_match_all('!https://[a-z0-9\-\.\/\?\=\&\#]+\.(?:jpe?g|png|gif|svg|eot|woff|ttf)!Ui', $html, $matches)){
+        if(preg_match_all('!https://[a-z0-9\_\-\.\/\?\=\&\#]+\.(?:jpe?g|png|gif|svg|eot|woff2|woff|ttf)!Ui', $html, $matches)){
             $matches = array_pop($matches);
             foreach($matches as $key => $url){
                 $explode = explode('.',$url);
