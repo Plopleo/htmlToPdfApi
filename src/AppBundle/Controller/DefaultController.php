@@ -9,6 +9,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use DOMDocument;
+use DOMXPath;
 
 class DefaultController extends Controller
 {
@@ -66,14 +68,80 @@ class DefaultController extends Controller
         }
     }
 
-    public function getContentPdf($htmlContent, $baseurl)
+    protected function getContentPdf($htmlContent, $baseurl)
     {
         $htmlContent = utf8_decode($htmlContent);
         $htmlContent = $this->replaceHttps($htmlContent, $baseurl);
-        $pdfContent = $this->get('knp_snappy.pdf')->getOutputFromHtml($htmlContent, array(
+
+        $options = array(
             'load-error-handling' => 'ignore',
-        ));
+            'load-media-error-handling' => 'ignore',
+        );
+
+        $getHeaderResult = $this->getHeader($htmlContent);
+        if($getHeaderResult != false){
+            $htmlContent = $getHeaderResult;
+            $options['header-html'] = $this->get('kernel')->getRootDir().'/../web/tmp/header.html';
+            $options['margin-top'] = '20mm';
+        }
+        $getFooterResult = $this->getFooter($htmlContent);
+        if($getFooterResult != false){
+            $htmlContent = $getFooterResult;
+            $options['footer-html'] = $this->get('kernel')->getRootDir().'/../web/tmp/footer.html';
+            $options['margin-bottom'] = '20mm';
+        }
+        $pdfContent = $this->get('knp_snappy.pdf')->getOutputFromHtml($htmlContent, $options);
         return $pdfContent;
+    }
+
+    protected function getFooter($html)
+    {
+        // evite les erreurs sur la structure du html
+        libxml_use_internal_errors(true);
+        $doc = new DOMDocument();
+        $doc->loadHTML($html);
+        $xpath = new DOMXPath($doc);
+        $result = '';
+        foreach($xpath->evaluate('//div[@id="footer"]/node()') as $childNode) {
+            $result .= $doc->saveXML($childNode);
+        }
+        $styleContent = '';
+        $styles = $doc->getElementsByTagName('style');
+        foreach($styles as $style){
+            $styleContent .= $style->nodeValue;
+        }
+
+        $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="footer">'.$result.'</div></body></html>';
+        file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/footer.html', utf8_decode(html_entity_decode($txt)));
+
+        $divFooter = $doc->getElementById('footer');
+        $divFooter->parentNode->removeChild($divFooter);
+        return $doc->saveHTML();
+    }
+
+    protected function getHeader($html)
+    {
+        // evite les erreurs sur la structure du html
+        libxml_use_internal_errors(true);
+        $doc = new DOMDocument();
+        $doc->loadHTML($html);
+        $xpath = new DOMXPath($doc);
+        $result = '';
+        foreach($xpath->evaluate('//div[@id="header"]/node()') as $childNode) {
+            $result .= $doc->saveXML($childNode);
+        }
+        $styleContent = '';
+        $styles = $doc->getElementsByTagName('style');
+        foreach($styles as $style){
+            $styleContent .= $style->nodeValue;
+        }
+
+        $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="header">'.$result.'</div></body></html>';
+        file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/header.html', utf8_decode(html_entity_decode($txt)));
+
+        $divFooter = $doc->getElementById('header');
+        $divFooter->parentNode->removeChild($divFooter);
+        return $doc->saveHTML();
     }
 
     protected function replaceHttps($html, $baseurl)
