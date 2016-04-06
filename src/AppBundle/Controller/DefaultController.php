@@ -100,23 +100,27 @@ class DefaultController extends Controller
         libxml_use_internal_errors(true);
         $doc = new DOMDocument();
         $doc->loadHTML($html);
-        $xpath = new DOMXPath($doc);
-        $result = '';
-        foreach($xpath->evaluate('//div[@id="footer"]/node()') as $childNode) {
-            $result .= $doc->saveXML($childNode);
-        }
-        $styleContent = '';
-        $styles = $doc->getElementsByTagName('style');
-        foreach($styles as $style){
-            $styleContent .= $style->nodeValue;
-        }
+        if($doc->getElementById('footer') != null){
+            $xpath = new DOMXPath($doc);
+            $result = '';
+            foreach($xpath->evaluate('//div[@id="footer"]/node()') as $childNode) {
+                $result .= $doc->saveXML($childNode);
+            }
+            $styleContent = '';
+            $styles = $doc->getElementsByTagName('style');
+            foreach($styles as $style){
+                $styleContent .= $style->nodeValue;
+            }
 
-        $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="footer">'.$result.'</div></body></html>';
-        file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/footer.html', utf8_decode(html_entity_decode($txt)));
+            $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="footer">'.$result.'</div></body></html>';
+            file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/footer.html', utf8_decode(html_entity_decode($txt)));
 
-        $divFooter = $doc->getElementById('footer');
-        $divFooter->parentNode->removeChild($divFooter);
-        return $doc->saveHTML();
+            $divFooter = $doc->getElementById('footer');
+            $divFooter->parentNode->removeChild($divFooter);
+            return $doc->saveHTML();
+        }else{
+            return false;
+        }
     }
 
     protected function getHeader($html)
@@ -125,23 +129,27 @@ class DefaultController extends Controller
         libxml_use_internal_errors(true);
         $doc = new DOMDocument();
         $doc->loadHTML($html);
-        $xpath = new DOMXPath($doc);
-        $result = '';
-        foreach($xpath->evaluate('//div[@id="header"]/node()') as $childNode) {
-            $result .= $doc->saveXML($childNode);
-        }
-        $styleContent = '';
-        $styles = $doc->getElementsByTagName('style');
-        foreach($styles as $style){
-            $styleContent .= $style->nodeValue;
-        }
+        if($doc->getElementById('header') != null){
+            $xpath = new DOMXPath($doc);
+            $result = '';
+            foreach($xpath->evaluate('//div[@id="header"]/node()') as $childNode) {
+                $result .= $doc->saveXML($childNode);
+            }
+            $styleContent = '';
+            $styles = $doc->getElementsByTagName('style');
+            foreach($styles as $style){
+                $styleContent .= $style->nodeValue;
+            }
 
-        $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="header">'.$result.'</div></body></html>';
-        file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/header.html', utf8_decode(html_entity_decode($txt)));
+            $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="header">'.$result.'</div></body></html>';
+            file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/header.html', utf8_decode(html_entity_decode($txt)));
 
-        $divFooter = $doc->getElementById('header');
-        $divFooter->parentNode->removeChild($divFooter);
-        return $doc->saveHTML();
+            $divHeader = $doc->getElementById('header');
+            $divHeader->parentNode->removeChild($divHeader);
+            return $doc->saveHTML();
+        }else{
+            return false;
+        }
     }
 
     protected function replaceHttps($html, $baseurl)
