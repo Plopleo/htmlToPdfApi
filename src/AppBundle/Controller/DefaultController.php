@@ -17,6 +17,10 @@ use DOMXPath;
 class DefaultController extends Controller
 {
 
+    const LANDSCAPE_CLASSNAME = 'landscape';
+    const PORTRAIT = 'portrait';
+    const PAGE_CLASSNAME = 'page';
+
     /**
      * @Route("/", name="index")
      */
@@ -98,7 +102,35 @@ class DefaultController extends Controller
             $options['footer-html'] = $this->getTmpFilesDirectory().'/footer.html';
             $options['margin-bottom'] = '20mm';
         }
-        $pdfContent = $this->get('knp_snappy.pdf')->getOutputFromHtml($htmlContent, $options);
+
+        $allPages = $this->getPages($htmlContent);
+
+        $fs = new Filesystem();
+
+        if(count($allPages) == 0){
+            $pdfContent = $this->get('knp_snappy.pdf')->getOutputFromHtml($htmlContent, $options);
+        }else{
+            $pdfFileNames = array();
+            $optionsLandscape = $options;
+            $optionsLandscape['orientation'] = 'Landscape';
+            $index = 0;
+            foreach($allPages as $page){
+
+                if($page['type'] == self::PORTRAIT){
+                    $pdfContentPage = $this->get('knp_snappy.pdf')->getOutputFromHtml($page['content'], $options);
+                }else{
+                    $pdfContentPage = $this->get('knp_snappy.pdf')->getOutputFromHtml($page['content'], $optionsLandscape);
+                }
+                $fs->dumpFile($this->getTmpFilesDirectory().'/page'.$index.'.pdf', $pdfContentPage);
+                $pdfFileNames[] = $this->getTmpFilesDirectory().'/page'.$index.'.pdf';
+
+                $index++;
+            }
+            $this->mergePdf($pdfFileNames, $this->getTmpFilesDirectory().'/final.pdf');
+
+            $pdfContent = file_get_contents($this->getTmpFilesDirectory().'/final.pdf');
+        }
+
         return $pdfContent;
     }
 
@@ -177,6 +209,40 @@ class DefaultController extends Controller
     }
 
     /**
+     * Return an array where $key = type(portrait or landscape) and $value = HTML content of the page | if no page -> empty array
+     * @param $html
+     * @return array
+     */
+    protected function getPages($html)
+    {
+        // evite les erreurs sur la structure du html
+        libxml_use_internal_errors(true);
+        $doc = new DOMDocument();
+        $doc->loadHTML($html);
+        $xpath = new DOMXPath($doc);
+
+        $nbPage = $xpath->evaluate("count(body/div[contains(concat(' ', normalize-space(@class), ' '), ' ".self::PAGE_CLASSNAME." ')])");
+
+        $allPages = array();
+
+        foreach($xpath->query("//div[contains(concat(' ', normalize-space(@class), ' '), ' ".self::PAGE_CLASSNAME." ')]") as $divPage) {
+            $domPage = new DOMDocument();
+            $domPage->appendChild($domPage->importNode($divPage, true));
+            $xpathPage = new DOMXPath($domPage);
+
+            if($xpathPage->evaluate("count(/div[contains(concat(' ', normalize-space(@class), ' '), ' ".self::LANDSCAPE_CLASSNAME." ')])") > 0){
+                $type = self::LANDSCAPE_CLASSNAME;
+            }else{
+                $type = self::PORTRAIT;
+            }
+            $page = array('type' => $type, 'content' => $doc->saveHTML($divPage));
+            $allPages[] = $page;
+        }
+
+        return $allPages;
+    }
+
+    /**
      * Wkhtmltopdf throws some errors with https ressources... so we replace them by copy - using curl because of https too
      * @param $html
      * @param $baseurl
@@ -228,6 +294,13 @@ class DefaultController extends Controller
         }
 
         return ($relatif)?$directoryRelatifPath:$directoryPath;
+    }
+
+    protected function mergePdf($files, $filename)
+    {
+        $files = implode(' ', $files);
+        $cmd = 'gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile='.$filename.' '.$files;
+        return shell_exec($cmd);
     }
 
 }
