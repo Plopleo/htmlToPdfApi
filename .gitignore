@@ -1,6 +1,7 @@
 .DS_Store
 /var/
 /web/bundles/
+/web/tmp/
 /app/bootstrap.php.cache
 /app/cache/*
 /app/config/parameters.yml

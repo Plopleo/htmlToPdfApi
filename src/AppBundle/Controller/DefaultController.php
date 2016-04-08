@@ -9,6 +9,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use DOMDocument;
 use DOMXPath;
 
@@ -27,7 +29,7 @@ class DefaultController extends Controller
                 'label' => false
             ))
             ->add('generer', SubmitType::class, array(
-                'label' => 'Générer le pdf !'
+                'label' => 'Generate !'
             ))
             ->getForm();
 
@@ -68,6 +70,12 @@ class DefaultController extends Controller
         }
     }
 
+    /**
+     * Return the pdf content
+     * @param $htmlContent
+     * @param $baseurl
+     * @return mixed
+     */
     protected function getContentPdf($htmlContent, $baseurl)
     {
         $htmlContent = utf8_decode($htmlContent);
@@ -81,19 +89,24 @@ class DefaultController extends Controller
         $getHeaderResult = $this->getHeader($htmlContent);
         if($getHeaderResult != false){
             $htmlContent = $getHeaderResult;
-            $options['header-html'] = $this->get('kernel')->getRootDir().'/../web/tmp/header.html';
+            $options['header-html'] = $this->getTmpFilesDirectory().'/header.html';
             $options['margin-top'] = '20mm';
         }
         $getFooterResult = $this->getFooter($htmlContent);
         if($getFooterResult != false){
             $htmlContent = $getFooterResult;
-            $options['footer-html'] = $this->get('kernel')->getRootDir().'/../web/tmp/footer.html';
+            $options['footer-html'] = $this->getTmpFilesDirectory().'/footer.html';
             $options['margin-bottom'] = '20mm';
         }
         $pdfContent = $this->get('knp_snappy.pdf')->getOutputFromHtml($htmlContent, $options);
         return $pdfContent;
     }
 
+    /**
+     * Create footer file if <div id="footer"></div> exist
+     * @param $html
+     * @return bool|string
+     */
     protected function getFooter($html)
     {
         // evite les erreurs sur la structure du html
@@ -113,7 +126,10 @@ class DefaultController extends Controller
             }
 
             $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="footer">'.$result.'</div></body></html>';
-            file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/footer.html', utf8_decode(html_entity_decode($txt)));
+
+            // Creation of footer.html
+            $fs = new Filesystem();
+            $fs->dumpFile($this->getTmpFilesDirectory().'/footer.html', utf8_decode(html_entity_decode($txt)));
 
             $divFooter = $doc->getElementById('footer');
             $divFooter->parentNode->removeChild($divFooter);
@@ -123,6 +139,11 @@ class DefaultController extends Controller
         }
     }
 
+    /**
+     * Create header file if <div id="header"></div> exist
+     * @param $html
+     * @return bool|string
+     */
     protected function getHeader($html)
     {
         // evite les erreurs sur la structure du html
@@ -142,7 +163,10 @@ class DefaultController extends Controller
             }
 
             $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="header">'.$result.'</div></body></html>';
-            file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/header.html', utf8_decode(html_entity_decode($txt)));
+
+            // Creation of header.html
+            $fs = new Filesystem();
+            $fs->dumpFile($this->getTmpFilesDirectory().'/header.html', utf8_decode(html_entity_decode($txt)));
 
             $divHeader = $doc->getElementById('header');
             $divHeader->parentNode->removeChild($divHeader);
@@ -152,6 +176,12 @@ class DefaultController extends Controller
         }
     }
 
+    /**
+     * Wkhtmltopdf throws some errors with https ressources... so we replace them by copy - using curl because of https too
+     * @param $html
+     * @param $baseurl
+     * @return mixed
+     */
     protected function replaceHttps($html, $baseurl)
     {
         if(preg_match_all('!https://[a-z0-9\_\-\.\/\?\=\&\#]+\.(?:jpe?g|png|gif|svg|eot|woff2|woff|ttf)!Ui', $html, $matches)){
@@ -160,9 +190,10 @@ class DefaultController extends Controller
                 $explode = explode('.',$url);
                 $extension = end($explode);
 
-                $source = $url;
-                $target = $this->get('kernel')->getRootDir() . '/../web/tmp/file'.$key.'.'.$extension;
-                $ch = curl_init($source);
+                $filename = 'file'.$key.'.'.$extension;
+
+                $target = $this->getTmpFilesDirectory().'/'.$filename;
+                $ch = curl_init($url);
                 $fp = fopen($target, "wb");
 
                 curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -172,10 +203,31 @@ class DefaultController extends Controller
                 curl_close($ch);
                 fclose($fp);
 
-                $html = str_replace($url, $baseurl.'/tmp/file'.$key.'.'.$extension, $html);
+                $html = str_replace($url, $baseurl.$this->getTmpFilesDirectory(true).'/'.$filename, $html);
             }
         }
 
         return $html;
     }
+
+    /**
+     * Check if exist or create the tmp files directory
+     * @return string
+     */
+    protected function getTmpFilesDirectory($relatif = false)
+    {
+        $date = date('Y-m-d');
+        $directoryPath = $this->get('kernel')->getRootDir() . '/../web/tmp/'.$date;
+        $directoryRelatifPath = '/tmp/'.$date;
+        $fs = new Filesystem();
+
+        if($fs->exists($directoryPath)){
+            $fs->chmod($directoryPath, 0777, 0000, true);
+        }else{
+            $fs->mkdir($directoryPath);
+        }
+
+        return ($relatif)?$directoryRelatifPath:$directoryPath;
+    }
+
 }
