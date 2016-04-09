@@ -298,8 +298,9 @@ class DefaultController extends Controller
 
     protected function mergePdf($files, $filename)
     {
+        $pathToGs = $this->getParameter('path_to_gs_command');
         $files = implode(' ', $files);
-        $cmd = 'gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile='.$filename.' '.$files;
+        $cmd = $pathToGs.' -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile='.$filename.' '.$files.' 2>&1';
         return shell_exec($cmd);
     }
 
