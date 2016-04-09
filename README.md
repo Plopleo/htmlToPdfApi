@@ -67,7 +67,7 @@ Landscape and portrait are both accepted, you have to use classes 'page' and add
 
 You can also go to the home to try this generator
 
-![home](/web/home.png?raw=true)
+![home](https://raw.github.com/Plopleo/htmlToPdfApi/master/web/home.png?raw=true)
 
 
 [KnpSnappyBundle]: <https://github.com/KnpLabs/KnpSnappyBundle>
