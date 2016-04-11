@@ -141,7 +141,7 @@ class DefaultController extends Controller
                 $styleContent .= $style->nodeValue;
             }
 
-            $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="header">'.$result.'</div></body></html>';
+            $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body><div id="header">'.$result.'</div></body></html>';
             file_put_contents($this->get('kernel')->getRootDir().'/../web/tmp/header.html', utf8_decode(html_entity_decode($txt)));
 
             $divHeader = $doc->getElementById('header');
