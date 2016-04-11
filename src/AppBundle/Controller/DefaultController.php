@@ -82,24 +82,26 @@ class DefaultController extends Controller
      */
     protected function getContentPdf($htmlContent, $baseurl)
     {
+        $uniqId = uniqid();
+
         $htmlContent = utf8_decode($htmlContent);
-        $htmlContent = $this->replaceHttps($htmlContent, $baseurl);
+        $htmlContent = $this->replaceHttps($htmlContent, $baseurl, $uniqId);
 
         $options = array(
             'load-error-handling' => 'ignore',
             'load-media-error-handling' => 'ignore',
         );
 
-        $getHeaderResult = $this->getHeader($htmlContent);
+        $getHeaderResult = $this->getHeader($htmlContent, $uniqId);
         if($getHeaderResult != false){
             $htmlContent = $getHeaderResult;
-            $options['header-html'] = $this->getTmpFilesDirectory().'/header.html';
+            $options['header-html'] = $this->getTmpFilesDirectory($uniqId).'/header.html';
             $options['margin-top'] = '20mm';
         }
-        $getFooterResult = $this->getFooter($htmlContent);
+        $getFooterResult = $this->getFooter($htmlContent, $uniqId);
         if($getFooterResult != false){
             $htmlContent = $getFooterResult;
-            $options['footer-html'] = $this->getTmpFilesDirectory().'/footer.html';
+            $options['footer-html'] = $this->getTmpFilesDirectory($uniqId).'/footer.html';
             $options['margin-bottom'] = '20mm';
         }
 
@@ -121,14 +123,14 @@ class DefaultController extends Controller
                 }else{
                     $pdfContentPage = $this->get('knp_snappy.pdf')->getOutputFromHtml($page['content'], $optionsLandscape);
                 }
-                $fs->dumpFile($this->getTmpFilesDirectory().'/page'.$index.'.pdf', $pdfContentPage);
-                $pdfFileNames[] = $this->getTmpFilesDirectory().'/page'.$index.'.pdf';
+                $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/page'.$index.'.pdf', $pdfContentPage);
+                $pdfFileNames[] = $this->getTmpFilesDirectory($uniqId).'/page'.$index.'.pdf';
 
                 $index++;
             }
-            $this->mergePdf($pdfFileNames, $this->getTmpFilesDirectory().'/final.pdf');
+            $this->mergePdf($pdfFileNames, $this->getTmpFilesDirectory($uniqId).'/final.pdf');
 
-            $pdfContent = file_get_contents($this->getTmpFilesDirectory().'/final.pdf');
+            $pdfContent = file_get_contents($this->getTmpFilesDirectory($uniqId).'/final.pdf');
         }
 
         return $pdfContent;
@@ -139,7 +141,7 @@ class DefaultController extends Controller
      * @param $html
      * @return bool|string
      */
-    protected function getFooter($html)
+    protected function getFooter($html, $uniqId)
     {
         // evite les erreurs sur la structure du html
         libxml_use_internal_errors(true);
@@ -161,7 +163,7 @@ class DefaultController extends Controller
 
             // Creation of footer.html
             $fs = new Filesystem();
-            $fs->dumpFile($this->getTmpFilesDirectory().'/footer.html', utf8_decode(html_entity_decode($txt)));
+            $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/footer.html', utf8_decode(html_entity_decode($txt)));
 
             $divFooter = $doc->getElementById('footer');
             $divFooter->parentNode->removeChild($divFooter);
@@ -176,7 +178,7 @@ class DefaultController extends Controller
      * @param $html
      * @return bool|string
      */
-    protected function getHeader($html)
+    protected function getHeader($html, $uniqId)
     {
         // evite les erreurs sur la structure du html
         libxml_use_internal_errors(true);
@@ -198,7 +200,7 @@ class DefaultController extends Controller
 
             // Creation of header.html
             $fs = new Filesystem();
-            $fs->dumpFile($this->getTmpFilesDirectory().'/header.html', utf8_decode(html_entity_decode($txt)));
+            $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/header.html', utf8_decode(html_entity_decode($txt)));
 
             $divHeader = $doc->getElementById('header');
             $divHeader->parentNode->removeChild($divHeader);
@@ -248,7 +250,7 @@ class DefaultController extends Controller
      * @param $baseurl
      * @return mixed
      */
-    protected function replaceHttps($html, $baseurl)
+    protected function replaceHttps($html, $baseurl, $uniqId)
     {
         if(preg_match_all('!https://[a-z0-9\_\-\.\/\?\=\&\#]+\.(?:jpe?g|png|gif|svg|eot|woff2|woff|ttf)!Ui', $html, $matches)){
             $matches = array_pop($matches);
@@ -258,7 +260,7 @@ class DefaultController extends Controller
 
                 $filename = 'file'.$key.'.'.$extension;
 
-                $target = $this->getTmpFilesDirectory().'/'.$filename;
+                $target = $this->getTmpFilesDirectory($uniqId).'/'.$filename;
                 $ch = curl_init($url);
                 $fp = fopen($target, "wb");
 
@@ -269,7 +271,7 @@ class DefaultController extends Controller
                 curl_close($ch);
                 fclose($fp);
 
-                $html = str_replace($url, $baseurl.$this->getTmpFilesDirectory(true).'/'.$filename, $html);
+                $html = str_replace($url, $baseurl.$this->getTmpFilesDirectory($uniqId, true).'/'.$filename, $html);
             }
         }
 
@@ -280,11 +282,11 @@ class DefaultController extends Controller
      * Check if exist or create the tmp files directory
      * @return string
      */
-    protected function getTmpFilesDirectory($relatif = false)
+    protected function getTmpFilesDirectory($uniqId, $relatif = false)
     {
         $date = date('Y-m-d');
-        $directoryPath = $this->get('kernel')->getRootDir() . '/../web/tmp/'.$date;
-        $directoryRelatifPath = '/tmp/'.$date;
+        $directoryPath = $this->get('kernel')->getRootDir() . '/../web/tmp/'.$date.'/'.$uniqId;
+        $directoryRelatifPath = '/tmp/'.$date.'/'.$uniqId;
         $fs = new Filesystem();
 
         if($fs->exists($directoryPath)){
