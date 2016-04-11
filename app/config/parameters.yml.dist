@@ -17,3 +17,6 @@ parameters:
 
     # A secret key that's used to generate certain security-related tokens
     secret:            ThisTokenIsNotSoSecretChangeIt
+
+    # Path to your gs command - gs is using to merge pdfs
+    path_to_gs_command: /usr/local/bin/gs
