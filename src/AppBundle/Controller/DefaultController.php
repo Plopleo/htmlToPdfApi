@@ -105,7 +105,7 @@ class DefaultController extends Controller
             $options['margin-bottom'] = '20mm';
         }
 
-        $allPages = $this->getPages($htmlContent);
+        $allPages = $this->getPages($htmlContent, $uniqId);
 
         $fs = new Filesystem();
 
@@ -119,9 +119,9 @@ class DefaultController extends Controller
             foreach($allPages as $page){
 
                 if($page['type'] == self::PORTRAIT){
-                    $pdfContentPage = $this->get('knp_snappy.pdf')->getOutputFromHtml($page['content'], $options);
+                    $pdfContentPage = $this->get('knp_snappy.pdf')->getOutputFromHtml(file_get_contents($page['page']), $options);
                 }else{
-                    $pdfContentPage = $this->get('knp_snappy.pdf')->getOutputFromHtml($page['content'], $optionsLandscape);
+                    $pdfContentPage = $this->get('knp_snappy.pdf')->getOutputFromHtml(file_get_contents($page['page']), $optionsLandscape);
                 }
                 $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/page'.$index.'.pdf', $pdfContentPage);
                 $pdfFileNames[] = $this->getTmpFilesDirectory($uniqId).'/page'.$index.'.pdf';
@@ -159,7 +159,7 @@ class DefaultController extends Controller
                 $styleContent .= $style->nodeValue;
             }
 
-            $txt = '<html><head><style>'.$styleContent.'</style></head><body><div id="footer">'.$result.'</div></body></html>';
+            $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body><div id="footer">'.$result.'</div></body></html>';
 
             // Creation of footer.html
             $fs = new Filesystem();
@@ -215,7 +215,7 @@ class DefaultController extends Controller
      * @param $html
      * @return array
      */
-    protected function getPages($html)
+    protected function getPages($html, $uniqId)
     {
         // evite les erreurs sur la structure du html
         libxml_use_internal_errors(true);
@@ -223,10 +223,15 @@ class DefaultController extends Controller
         $doc->loadHTML($html);
         $xpath = new DOMXPath($doc);
 
-        $nbPage = $xpath->evaluate("count(body/div[contains(concat(' ', normalize-space(@class), ' '), ' ".self::PAGE_CLASSNAME." ')])");
+        $styleContent = '';
+        $styles = $doc->getElementsByTagName('style');
+        foreach($styles as $style){
+            $styleContent .= $style->nodeValue;
+        }
 
         $allPages = array();
 
+        $index = 0;
         foreach($xpath->query("//div[contains(concat(' ', normalize-space(@class), ' '), ' ".self::PAGE_CLASSNAME." ')]") as $divPage) {
             $domPage = new DOMDocument();
             $domPage->appendChild($domPage->importNode($divPage, true));
@@ -237,8 +242,16 @@ class DefaultController extends Controller
             }else{
                 $type = self::PORTRAIT;
             }
-            $page = array('type' => $type, 'content' => $doc->saveHTML($divPage));
+            $page = $doc->saveXML($divPage);
+            $content = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body>'.$page.'</body></html>';
+
+            // Creation of footer.html
+            $fs = new Filesystem();
+            $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/page'.$index.'.html', utf8_decode(html_entity_decode($content)));
+
+            $page = array('type' => $type, 'page' => $this->getTmpFilesDirectory($uniqId).'/page'.$index.'.html');
             $allPages[] = $page;
+            $index++;
         }
 
         return $allPages;
