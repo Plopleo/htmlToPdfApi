@@ -159,7 +159,7 @@ class DefaultController extends Controller
                 $styleContent .= $style->nodeValue;
             }
 
-            $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body><div id="footer">'.$result.'</div></body></html>';
+            $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;"><div id="footer">'.$result.'</div></body></html>';
 
             // Creation of footer.html
             $fs = new Filesystem();
@@ -196,7 +196,7 @@ class DefaultController extends Controller
                 $styleContent .= $style->nodeValue;
             }
 
-            $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body><div id="header">'.$result.'</div></body></html>';
+            $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;"><div id="header">'.$result.'</div></body></html>';
 
             // Creation of header.html
             $fs = new Filesystem();
@@ -228,6 +228,13 @@ class DefaultController extends Controller
         foreach($styles as $style){
             $styleContent .= $style->nodeValue;
         }
+        $head = $doc->getElementsByTagName('head')->item(0);
+        $links = $head->getElementsByTagName("link");
+        foreach($links as $l) {
+            if($l->getAttribute("rel") == "stylesheet") {
+                $styleContent .= @file_get_contents($l->getAttribute("href"));
+            }
+        }
 
         $allPages = array();
 
@@ -243,7 +250,7 @@ class DefaultController extends Controller
                 $type = self::PORTRAIT;
             }
             $page = $doc->saveXML($divPage);
-            $content = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body>'.$page.'</body></html>';
+            $content = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;">'.$page.'</body></html>';
 
             // Creation of footer.html
             $fs = new Filesystem();
