@@ -42,7 +42,10 @@ class DefaultController extends Controller
             $data = $form->getData();
 
             $baseurl = $request->getScheme() . '://' . $request->getHttpHost();
-            $pdfContent = $this->getContentPdf($data['html_content'], $baseurl);
+            $pdfContent = $this->getContentPdf($data['html_content'], $baseurl, [
+                'header-margin-top' => '20mm',
+                'footer-margin-bottom' => '20mm'
+            ]);
 
             return new Response(
                 $pdfContent,
@@ -70,7 +73,12 @@ class DefaultController extends Controller
 
             $htmlContent = $request->request->get('html_content');
 
-            return new JsonResponse(array('pdf_content' => utf8_encode($this->getContentPdf($htmlContent, $baseurl))));
+            $options = [
+                'header-margin-top' => $request->request->get('header-margin-top', '20mm'),
+                'footer-margin-bottom' => $request->request->get('footer-margin-bottom', '20mm')
+            ];
+
+            return new JsonResponse(array('pdf_content' => utf8_encode($this->getContentPdf($htmlContent, $baseurl, $options))));
         }
     }
 
@@ -80,7 +88,7 @@ class DefaultController extends Controller
      * @param $baseurl
      * @return mixed
      */
-    protected function getContentPdf($htmlContent, $baseurl)
+    protected function getContentPdf($htmlContent, $baseurl, $optionsPdf)
     {
         $uniqId = uniqid();
 
@@ -96,13 +104,13 @@ class DefaultController extends Controller
         if($getHeaderResult != false){
             $htmlContent = $getHeaderResult;
             $options['header-html'] = $this->getTmpFilesDirectory($uniqId).'/header.html';
-            $options['margin-top'] = '20mm';
+            $options['margin-top'] = $optionsPdf['header-margin-top'];
         }
         $getFooterResult = $this->getFooter($htmlContent, $uniqId);
         if($getFooterResult != false){
             $htmlContent = $getFooterResult;
             $options['footer-html'] = $this->getTmpFilesDirectory($uniqId).'/footer.html';
-            $options['margin-bottom'] = '20mm';
+            $options['margin-bottom'] = $optionsPdf['footer-margin-bottom'];
         }
 
         $allPages = $this->getPages($htmlContent, $uniqId);
