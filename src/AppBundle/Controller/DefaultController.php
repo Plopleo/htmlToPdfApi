@@ -232,16 +232,16 @@ class DefaultController extends Controller
         $xpath = new DOMXPath($doc);
 
         $styleContent = '';
-        $styles = $doc->getElementsByTagName('style');
-        foreach($styles as $style){
-            $styleContent .= $style->nodeValue;
-        }
         $head = $doc->getElementsByTagName('head')->item(0);
         $links = $head->getElementsByTagName("link");
         foreach($links as $l) {
             if($l->getAttribute("rel") == "stylesheet") {
                 $styleContent .= @file_get_contents($l->getAttribute("href"));
             }
+        }
+        $styles = $doc->getElementsByTagName('style');
+        foreach($styles as $style){
+            $styleContent .= $style->nodeValue;
         }
 
         $allPages = array();
