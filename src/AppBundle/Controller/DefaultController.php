@@ -75,7 +75,9 @@ class DefaultController extends Controller
 
             $options = [
                 'header-margin-top' => $request->request->get('header-margin-top', '20mm'),
-                'footer-margin-bottom' => $request->request->get('footer-margin-bottom', '20mm')
+                'footer-margin-bottom' => $request->request->get('footer-margin-bottom', '20mm'),
+                'margin-left' => $request->request->get('margin-left', '10mm'),
+                'margin-right' => $request->request->get('margin-right', '10mm')
             ];
 
             return new JsonResponse(array('pdf_content' => utf8_encode($this->getContentPdf($htmlContent, $baseurl, $options))));
@@ -112,6 +114,8 @@ class DefaultController extends Controller
             $options['footer-html'] = $this->getTmpFilesDirectory($uniqId).'/footer.html';
             $options['margin-bottom'] = $optionsPdf['footer-margin-bottom'];
         }
+        $options['margin-left'] = $optionsPdf['margin-left'];
+        $options['margin-right'] = $optionsPdf['margin-right'];
 
         $allPages = $this->getPages($htmlContent, $uniqId);
 

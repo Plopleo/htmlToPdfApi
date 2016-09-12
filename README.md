@@ -48,6 +48,12 @@ You can add footer or header by using div with id 'footer' or 'header'
 </html>
 ```
 
+Left and right margins are both configurable, by default 10mm
+```sh
+ ['margin-left'] => '0mm'
+ ['margin-right'] => '0mm'
+```
+
 Landscape and portrait are both accepted, you have to use classes 'page' and add 'landscape' class for landscape pages
 ```sh
 <html>
