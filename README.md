@@ -75,6 +75,11 @@ You can also go to the home to try this generator
 
 ![home](/web/home.png?raw=true)
 
+To delete data saved by the generator (first optional arg = nb days from now to keep data / default = 4):
+```sh
+php bin/console app:clear optionalNbDaysToSave
+```
+
 
 [KnpSnappyBundle]: <https://github.com/KnpLabs/KnpSnappyBundle>
 [wkhtmltopdf]: <http://wkhtmltopdf.org/downloads.html>
