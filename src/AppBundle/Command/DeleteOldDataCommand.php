@@ -40,7 +40,7 @@ class DeleteOldDataCommand extends Command
         $dueDate = new \DateTime('now');
         $dueDate->sub(new \DateInterval('P'.$nbDaysToSave.'D'));
 
-        $finder->in(__DIR__.'/../../../web/tmp')->directories()->depth('== 0');
+        $finder->in(getcwd().'/web/tmp')->directories()->depth('== 0');
         foreach ($finder as $dir) {
             $directoryDate = new \DateTime($dir->getRelativePathname());
             if($directoryDate < $dueDate){
