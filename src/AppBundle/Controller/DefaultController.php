@@ -43,8 +43,8 @@ class DefaultController extends Controller
 
             $baseurl = $request->getScheme() . '://' . $request->getHttpHost();
             $pdfContent = $this->getContentPdf($data['html_content'], $baseurl, [
-                'header-margin-top' => '20mm',
-                'footer-margin-bottom' => '20mm'
+                'header-margin-top' => '15mm',
+                'footer-margin-bottom' => '15mm'
             ]);
 
             return new Response(
@@ -74,8 +74,8 @@ class DefaultController extends Controller
             $htmlContent = $request->request->get('html_content');
 
             $options = [
-                'header-margin-top' => $request->request->get('header-margin-top', '20mm'),
-                'footer-margin-bottom' => $request->request->get('footer-margin-bottom', '20mm'),
+                'header-margin-top' => $request->request->get('header-margin-top', '15mm'),
+                'footer-margin-bottom' => $request->request->get('footer-margin-bottom', '15mm'),
                 'margin-left' => $request->request->get('margin-left', '10mm'),
                 'margin-right' => $request->request->get('margin-right', '10mm')
             ];
