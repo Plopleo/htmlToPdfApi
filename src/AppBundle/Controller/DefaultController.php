@@ -170,6 +170,15 @@ class DefaultController extends Controller
                 $result .= $doc->saveXML($childNode);
             }
             $styleContent = '';
+
+            $head = $doc->getElementsByTagName('head')->item(0);
+            $links = $head->getElementsByTagName("link");
+            foreach($links as $l) {
+                if($l->getAttribute("rel") == "stylesheet") {
+                    $styleContent .= @file_get_contents($l->getAttribute("href"));
+                }
+            }
+
             $styles = $doc->getElementsByTagName('style');
             foreach($styles as $style){
                 $styleContent .= $style->nodeValue;
@@ -207,6 +216,15 @@ class DefaultController extends Controller
                 $result .= $doc->saveXML($childNode);
             }
             $styleContent = '';
+
+            $head = $doc->getElementsByTagName('head')->item(0);
+            $links = $head->getElementsByTagName("link");
+            foreach($links as $l) {
+                if($l->getAttribute("rel") == "stylesheet") {
+                    $styleContent .= @file_get_contents($l->getAttribute("href"));
+                }
+            }
+
             $styles = $doc->getElementsByTagName('style');
             foreach($styles as $style){
                 $styleContent .= $style->nodeValue;
