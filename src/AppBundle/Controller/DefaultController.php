@@ -43,8 +43,10 @@ class DefaultController extends Controller
 
             $baseurl = $request->getScheme() . '://' . $request->getHttpHost();
             $pdfContent = $this->getContentPdf($data['html_content'], $baseurl, [
-                'header-margin-top' => '15mm',
-                'footer-margin-bottom' => '15mm'
+                'header-margin-top' => '20mm',
+                'footer-margin-bottom' => '20mm',
+                'margin-left' => '20mm',
+                'margin-right' => '20mm',
             ]);
 
             return new Response(
@@ -106,14 +108,27 @@ class DefaultController extends Controller
         if($getHeaderResult != false){
             $htmlContent = $getHeaderResult;
             $options['header-html'] = $this->getTmpFilesDirectory($uniqId).'/header.html';
-            $options['margin-top'] = $optionsPdf['header-margin-top'];
         }
+        if(isset($optionsPdf['header-margin-top'])){
+            $options['margin-top'] = $optionsPdf['header-margin-top'];
+        }elseif(!isset($options['margin-top'])){
+            $options['margin-top'] = '5mm';
+        }
+
+        //if no margin => the footer can't be displayed
         $getFooterResult = $this->getFooter($htmlContent, $uniqId);
         if($getFooterResult != false){
             $htmlContent = $getFooterResult;
             $options['footer-html'] = $this->getTmpFilesDirectory($uniqId).'/footer.html';
-            $options['margin-bottom'] = $optionsPdf['footer-margin-bottom'];
         }
+
+        if(isset($optionsPdf['footer-margin-bottom'])){
+            $options['margin-bottom'] = $optionsPdf['footer-margin-bottom'];
+        }elseif(!isset($options['margin-bottom'])){
+            $options['margin-bottom'] = '5mm';
+        }
+
+
         if(isset($optionsPdf['margin-left'])){
             $options['margin-left'] = $optionsPdf['margin-left'];
         }
