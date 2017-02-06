@@ -16,3 +16,4 @@
 /web/assetic
 composer.lock
 *.php~
+vhost/htmltopdf.conf
