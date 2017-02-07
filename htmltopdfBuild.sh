@@ -3,7 +3,6 @@
 PATH_SCRIPT=$(dirname "$0")
 PLATEFORME="dev-"
 DOMAINE="example.com"
-HTPASSWD="false"
 VHOST_PATH="vhost/htmltopdf.conf"
 
 function usage()
