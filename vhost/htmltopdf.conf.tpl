@@ -5,5 +5,4 @@
                 Options FollowSymLinks
                 AllowOverride All
         </Directory>
-        %htpasswd%
 </VirtualHost>

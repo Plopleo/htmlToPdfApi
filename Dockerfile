@@ -12,6 +12,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN a2enmod rewrite
 
 COPY ./vhost/htmltopdf.conf /etc/apache2/sites-available/.
+COPY ./vhost/localtime.ini /usr/local/etc/php/conf.d
 
 RUN  rm /etc/apache2/sites-enabled/000-default.conf && \
      ln -s /etc/apache2/sites-available/htmltopdf.conf /etc/apache2/sites-enabled/.

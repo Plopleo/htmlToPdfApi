@@ -2,7 +2,7 @@
 
 PATH_SCRIPT=$(dirname "$0")
 PLATEFORME="dev-"
-DOMAINE="copromatic.com"
+DOMAINE="example.com"
 HTPASSWD="false"
 VHOST_PATH="vhost/htmltopdf.conf"
 
@@ -12,7 +12,6 @@ function usage()
     echo "  -h --help"
     echo "  --domaine=${DOMAINE}"
     echo "  --plateforme=${PLATEFORME}"
-    echo "  --htpasswd=false"
     echo ""
 }
 
@@ -30,9 +29,6 @@ while [ "$1" != "" ]; do
         --plateforme)
             PLATEFORME=$VALUE
             ;;
-        --htpasswd)
-            HTPASSWD=$VALUE
-            ;;
         *)
             echo "ERREUR: parametre inconnu \"$PARAM\""
             usage
@@ -48,10 +44,3 @@ cp $PATH_SCRIPT/${VHOST_PATH}.tpl $PATH_SCRIPT/${VHOST_PATH}
 sed -i -e "s/%plateforme%/${PLATEFORME}/g" $PATH_SCRIPT/vhost/htmltopdf.conf
 sed -i -e "s/%domaine%/${DOMAINE}/g" $PATH_SCRIPT/vhost/htmltopdf.conf
 echo "Fichier vhost htmltopdf généré: ${VHOST_PATH}"
-
-## Gestion du htpasswd
-if [[ $HTPASSWD = "true" ]]; then
-    sed -i -e "s/%htpasswd%/<Location \/>\\n\\t\\tAuthType Basic\\n\\t\\tAuthName \"Restricted Files\"\\n\\t\\tAuthBasicProvider file\\n\\t\\tAuthUserFile \/var\/www\/htpasswd\\n\\t\\tRequire valid-user\\n\\t<\/Location>/g" $PATH_SCRIPT/vhost/htmltopdf.conf
-else
-    sed -i -e "/%htpasswd%/d" $PATH_SCRIPT/vhost/htmltopdf.conf
-fi
