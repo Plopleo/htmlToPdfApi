@@ -21,5 +21,5 @@ parameters:
     # Path to your gs command - gs is using to merge pdfs
     path_to_gs_command: /usr/bin/ghostscript
     
-    wkhtmltopdf_path: /usr/bin/wkhtmltopdf
+    wkhtmltopdf_path: /usr/local/bin/wkhtmltopdf
     wkhtmltoimage_path: /usr/bin/wkhtmltoimage
