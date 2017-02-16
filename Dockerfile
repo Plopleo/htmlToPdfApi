@@ -18,7 +18,6 @@ COPY ./vhost/localtime.ini /usr/local/etc/php/conf.d
 RUN  rm /etc/apache2/sites-enabled/000-default.conf && \
      ln -s /etc/apache2/sites-available/htmltopdf.conf /etc/apache2/sites-enabled/.
 
-
 RUN usermod -u 1000 www-data
 
-WORKDIR /var/www/datacopro
+WORKDIR /var/www/htmlToPdfApi
