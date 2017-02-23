@@ -46,8 +46,10 @@ class DefaultController extends Controller
 
             $baseurl = $request->getScheme() . '://' . $request->getHttpHost();
             $pdfContent = $this->getContentPdf($data['html_content'], $baseurl, [
-                'header-margin-top' => '15mm',
-                'footer-margin-bottom' => '15mm'
+                'header-margin-top' => '20mm',
+                'footer-margin-bottom' => '20mm',
+                'margin-left' => '20mm',
+                'margin-right' => '20mm',
             ]);
 
             return new Response(
@@ -105,31 +107,18 @@ class DefaultController extends Controller
             'load-media-error-handling' => 'ignore',
         );
 
-        //$getHeaderResult = $this->getHeader($htmlContent, $uniqId);
-        //if($getHeaderResult != false){
-        //    $htmlContent = $getHeaderResult;
-        //    $options['header-html'] = $this->getTmpFilesDirectory($uniqId).'/header.html';
-        //    $options['margin-top'] = $optionsPdf['header-margin-top'];
-        //}
-        //$getFooterResult = $this->getFooter($htmlContent, $uniqId);
-        //if($getFooterResult != false){
-        //    $htmlContent = $getFooterResult;
-        //    $options['footer-html'] = $this->getTmpFilesDirectory($uniqId).'/footer.html';
-        //    $options['margin-bottom'] = $optionsPdf['footer-margin-bottom'];
-        //}
-
-        $headers = $footers = [];
-        $resultHeader = $this->getHeaders($htmlContent, $uniqId);
-        if($resultHeader != false){
-            $htmlContent = $resultHeader['htmlContent'];
-            $headers = $resultHeader['headers'];
+        $getHeaderResult = $this->getHeader($htmlContent, $uniqId);
+        if($getHeaderResult != false){
+            $htmlContent = $getHeaderResult;
+            $options['header-html'] = $this->getTmpFilesDirectory($uniqId).'/header.html';
+            $options['margin-top'] = $optionsPdf['header-margin-top'];
         }
-        $resultFooter = $this->getFooters($htmlContent, $uniqId);
-        if($resultFooter != false){
-            $htmlContent = $resultFooter['htmlContent'];
-            $footers = $resultFooter['headers'];
+        $getFooterResult = $this->getFooter($htmlContent, $uniqId);
+        if($getFooterResult != false){
+            $htmlContent = $getFooterResult;
+            $options['footer-html'] = $this->getTmpFilesDirectory($uniqId).'/footer.html';
+            $options['margin-bottom'] = $optionsPdf['footer-margin-bottom'];
         }
-
         if(isset($optionsPdf['margin-left'])){
             $options['margin-left'] = $optionsPdf['margin-left'];
         }
@@ -168,75 +157,69 @@ class DefaultController extends Controller
         return $pdfContent;
     }
 
-    protected function getHeaders($html, $uniqId)
+    /**
+     * Create footer file if <div id="footer"></div> exist
+     * @param $html
+     * @return bool|string
+     */
+    protected function getFooter($html, $uniqId)
     {
         // evite les erreurs sur la structure du html
         libxml_use_internal_errors(true);
         $doc = new DOMDocument();
         $doc->loadHTML($html);
-
-        $headers = $doc->getElementsByTagName(self::HEADER);
-
-        if(count($headers)){
-            $headerArray = [];
-            foreach ($headers as $header) {
-                $headerName = $header->getAttribute('name');
-
-                $headerContent = $this->getDomInnerHtml($header);
-                $styleContent = $this->getStyleContent($doc);
-
-                $headerContent = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;"><div id="header">'.$headerContent.'</div></body></html>';
-
-                $fs = new Filesystem();
-                $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/'.$headerName.'.html', utf8_decode(html_entity_decode($headerContent)));
-
-                $header->parentNode->removeChild($header);
-
-                $doc->saveHTML();
-
-                $headerArray[] = $headerName;
+        if($doc->getElementById('footer') != null){
+            $xpath = new DOMXPath($doc);
+            $result = '';
+            foreach($xpath->evaluate('//div[@id="footer"]/node()') as $childNode) {
+                $result .= $doc->saveXML($childNode);
             }
-            return [
-                'htmlContent' => $doc,
-                'headers' => $headerArray
-            ];
+
+            $styleContent = $this->getStyleContent($doc);
+
+            $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;"><div id="footer">'.$result.'</div></body></html>';
+
+            // Creation of footer.html
+            $fs = new Filesystem();
+            $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/footer.html', utf8_decode(html_entity_decode($txt)));
+
+            $divFooter = $doc->getElementById('footer');
+            $divFooter->parentNode->removeChild($divFooter);
+            return $doc->saveHTML();
         }else{
             return false;
         }
     }
 
-    protected function getFooters($html, $uniqId)
+    /**
+     * Create header file if <div id="header"></div> exist
+     * @param $html
+     * @return bool|string
+     */
+    protected function getHeader($html, $uniqId)
     {
         // evite les erreurs sur la structure du html
         libxml_use_internal_errors(true);
         $doc = new DOMDocument();
         $doc->loadHTML($html);
-
-        $footers = $doc->getElementsByTagName(self::FOOTER);
-
-        if(count($footers)){
-            $footerArray = [];
-            foreach ($footers as $footer) {
-                $footerName = $footer->getAttribute('name');
-
-                $footerContent = $this->getDomInnerHtml($footer);
-                $styleContent = $this->getStyleContent($doc);
-
-                $footerContent = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;"><div id="footer">'.$footerContent.'</div></body></html>';
-
-                $fs = new Filesystem();
-                $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/'.$footerName.'.html', utf8_decode(html_entity_decode($footerContent)));
-
-                $footer->parentNode->removeChild($footer);
-
-                $doc->saveHTML();
-
-                $footerArray[] = $footerName;
+        if($doc->getElementById('header') != null){
+            $xpath = new DOMXPath($doc);
+            $result = '';
+            foreach($xpath->evaluate('//div[@id="header"]/node()') as $childNode) {
+                $result .= $doc->saveXML($childNode);
             }
-            return [
-                'htmlContent' => $doc,
-                'footers' => $footerArray
-            ];
+
+            $styleContent = $this->getStyleContent($doc);
+
+            $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;"><div id="header">'.$result.'</div></body></html>';
+
+            // Creation of header.html
+            $fs = new Filesystem();
+            $fs->dumpFile($this->getTmpFilesDirectory($uniqId).'/header.html', utf8_decode(html_entity_decode($txt)));
+
+            $divHeader = $doc->getElementById('header');
+            $divHeader->parentNode->removeChild($divHeader);
+            return $doc->saveHTML();
         }else{
             return false;
         }
