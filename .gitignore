@@ -17,4 +17,5 @@
 composer.lock
 *.php~
 vhost/htmltopdf.conf
+vhost/htmltopdf.ini
 *.bk

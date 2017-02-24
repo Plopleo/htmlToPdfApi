@@ -25,7 +25,7 @@ RUN echo '#!/bin/bash\nxvfb-run -a --server-args="-screen 0, 1024x768x24" /usr/b
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 COPY ./vhost/htmltopdf.conf /etc/apache2/sites-available/.
-COPY ./vhost/localtime.ini /usr/local/etc/php/conf.d
+COPY ./vhost/htmltopdf.ini /usr/local/etc/php/conf.d
 
 RUN  rm /etc/apache2/sites-enabled/000-default.conf && \
      ln -s /etc/apache2/sites-available/htmltopdf.conf /etc/apache2/sites-enabled/.
