@@ -12,11 +12,14 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
 use DOMDocument;
+use DOMNode;
 use DOMXPath;
 
 class DefaultController extends Controller
 {
 
+    const HEADER = 'header';
+    const FOOTER = 'footer';
     const LANDSCAPE_CLASSNAME = 'landscape';
     const PORTRAIT = 'portrait';
     const PAGE_CLASSNAME = 'page';
@@ -108,27 +111,14 @@ class DefaultController extends Controller
         if($getHeaderResult != false){
             $htmlContent = $getHeaderResult;
             $options['header-html'] = $this->getTmpFilesDirectory($uniqId).'/header.html';
-        }
-        if(isset($optionsPdf['header-margin-top'])){
             $options['margin-top'] = $optionsPdf['header-margin-top'];
-        }elseif(!isset($options['margin-top'])){
-            $options['margin-top'] = '5mm';
         }
-
-        //if no margin => the footer can't be displayed
         $getFooterResult = $this->getFooter($htmlContent, $uniqId);
         if($getFooterResult != false){
             $htmlContent = $getFooterResult;
             $options['footer-html'] = $this->getTmpFilesDirectory($uniqId).'/footer.html';
-        }
-
-        if(isset($optionsPdf['footer-margin-bottom'])){
             $options['margin-bottom'] = $optionsPdf['footer-margin-bottom'];
-        }elseif(!isset($options['margin-bottom'])){
-            $options['margin-bottom'] = '5mm';
         }
-
-
         if(isset($optionsPdf['margin-left'])){
             $options['margin-left'] = $optionsPdf['margin-left'];
         }
@@ -184,20 +174,8 @@ class DefaultController extends Controller
             foreach($xpath->evaluate('//div[@id="footer"]/node()') as $childNode) {
                 $result .= $doc->saveXML($childNode);
             }
-            $styleContent = '';
 
-            $head = $doc->getElementsByTagName('head')->item(0);
-            $links = $head->getElementsByTagName("link");
-            foreach($links as $l) {
-                if($l->getAttribute("rel") == "stylesheet") {
-                    $styleContent .= @file_get_contents($l->getAttribute("href"));
-                }
-            }
-
-            $styles = $doc->getElementsByTagName('style');
-            foreach($styles as $style){
-                $styleContent .= $style->nodeValue;
-            }
+            $styleContent = $this->getStyleContent($doc);
 
             $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;"><div id="footer">'.$result.'</div></body></html>';
 
@@ -230,20 +208,8 @@ class DefaultController extends Controller
             foreach($xpath->evaluate('//div[@id="header"]/node()') as $childNode) {
                 $result .= $doc->saveXML($childNode);
             }
-            $styleContent = '';
 
-            $head = $doc->getElementsByTagName('head')->item(0);
-            $links = $head->getElementsByTagName("link");
-            foreach($links as $l) {
-                if($l->getAttribute("rel") == "stylesheet") {
-                    $styleContent .= @file_get_contents($l->getAttribute("href"));
-                }
-            }
-
-            $styles = $doc->getElementsByTagName('style');
-            foreach($styles as $style){
-                $styleContent .= $style->nodeValue;
-            }
+            $styleContent = $this->getStyleContent($doc);
 
             $txt = '<!DOCTYPE html><html><head><style>'.$styleContent.'</style></head><body style="margin:0; padding:0;"><div id="header">'.$result.'</div></body></html>';
 
@@ -272,18 +238,7 @@ class DefaultController extends Controller
         $doc->loadHTML($html);
         $xpath = new DOMXPath($doc);
 
-        $styleContent = '';
-        $head = $doc->getElementsByTagName('head')->item(0);
-        $links = $head->getElementsByTagName("link");
-        foreach($links as $l) {
-            if($l->getAttribute("rel") == "stylesheet") {
-                $styleContent .= @file_get_contents($l->getAttribute("href"));
-            }
-        }
-        $styles = $doc->getElementsByTagName('style');
-        foreach($styles as $style){
-            $styleContent .= $style->nodeValue;
-        }
+        $styleContent = $this->getStyleContent($doc);
 
         $allPages = array();
 
@@ -345,6 +300,40 @@ class DefaultController extends Controller
         }
 
         return $html;
+    }
+
+    /**
+     * Return all CSS content of $doc
+     * @param DOMDocument $doc
+     * @return string
+     */
+    protected function getStyleContent(DOMDocument $doc)
+    {
+        $styleContent = '';
+
+        $head = $doc->getElementsByTagName('head')->item(0);
+        $links = $head->getElementsByTagName("link");
+        foreach($links as $l) {
+            if($l->getAttribute("rel") == "stylesheet") {
+                $styleContent .= @file_get_contents($l->getAttribute("href"));
+            }
+        }
+
+        $styles = $doc->getElementsByTagName('style');
+        foreach($styles as $style){
+            $styleContent .= $style->nodeValue;
+        }
+
+        return $styleContent;
+    }
+
+    protected function getDomInnerHtml(DOMNode $element)
+    {
+        $innerHTML = '';
+        foreach($element->childNodes as $child){
+            $innerHTML .= $element->ownerDocument->saveHTML($child);
+        }
+        return $innerHTML;
     }
 
     /**
