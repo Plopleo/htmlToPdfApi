@@ -9,7 +9,14 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     ghostscript \
-    wkhtmltopdf xvfb
+    xvfb \
+    wget vim \
+    libxrender1
+
+RUN wget http://download.gna.org/wkhtmltopdf/0.12/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz &&\
+    tar xf wkhtmltox-0.12.4_linux-generic-amd64.tar.xz -C /home &&\
+    ln -s /home/wkhtmltox/bin/wkhtmltopdf /usr/bin/wkhtmltopdf &&\
+    rm wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
 
 RUN echo -e '#!/bin/bash\nxvfb-run -a --server-args="-screen 0, 1024x768x24" /usr/bin/wkhtmltopdf -q $*' > /usr/bin/wkhtmltopdf.sh && \
     chmod a+x /usr/bin/wkhtmltopdf.sh && \
