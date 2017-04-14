@@ -295,7 +295,7 @@ class DefaultController extends Controller
                 curl_close($ch);
                 fclose($fp);
 
-                $html = str_replace($url, $baseurl.$this->getTmpFilesDirectory($uniqId, true).'/'.$filename, $html);
+                $html = str_replace($url, $this->getTmpFilesDirectory($uniqId).'/'.$filename, $html);
             }
         }
 
