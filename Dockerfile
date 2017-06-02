@@ -13,10 +13,9 @@ RUN apt-get update && apt-get install -y \
     wget vim \
     libxrender1
 
-RUN wget http://download.gna.org/wkhtmltopdf/0.12/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz &&\
-    tar xf wkhtmltox-0.12.4_linux-generic-amd64.tar.xz -C /home &&\
-    ln -s /home/wkhtmltox/bin/wkhtmltopdf /usr/bin/wkhtmltopdf &&\
-    rm wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
+COPY bin/wkhtmltox /home/wkhtmltox
+
+RUN ln -s /home/wkhtmltox/bin/wkhtmltopdf /usr/bin/wkhtmltopdf
 
 RUN echo '#!/bin/bash\nxvfb-run -a --server-args="-screen 0, 1024x768x24" /usr/bin/wkhtmltopdf --dpi 1200 --zoom 1.28 -q $*' > /usr/bin/wkhtmltopdf.sh && \
     chmod a+x /usr/bin/wkhtmltopdf.sh && \
